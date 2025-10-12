@@ -1,0 +1,227 @@
+# GCP プロジェクトを選択
+gcloud config set project polar-fulcrum-358119
+
+# API 有効化
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com pubsub.googleapis.com cloudscheduler.googleapis.com
+
+🔹 ステップ 2. Artifact Registry リポジトリ作成（まだない場合）
+
+gcloud artifacts repositories create my-docker-repo --repository-format=docker --location=asia-northeast1 --description="Docker repo for Cloud Run service"
+
+「1,py.pandas将来エラー→ ser[0] のように書いている部分を ser.iloc[0] に修正すれば警告は消えます。
+2,Flask の警告
+
+WARNING: This is a development server. Do not use it in a production deployment.
+
+
+Cloud Run 上で flask run を直接起動しているために出ています。
+これは料金には影響しませんが、本番環境向けには Gunicorn 等を使うべきと Flask が警告しているだけです。
+→ Dockerfile を修正して gunicorn -b :8080 getDevAndPop:app のようにするのが推奨です。
+3,無駄なインスタンス起動の可能性
+Cloud Run は「リクエストが来たときに自動で起動 → 一定時間待機 → 停止」する仕組みです。
+
+複数回エラーやリトライが発生すると、そのたびにインスタンスが立ち上がり 料金が余計にかかる可能性 があります。
+
+特に Pub/Sub Push 型は「処理が 200 を返さない」と再試行 → 無限に呼ばれることもあります。
+
+→ 解決策:
+
+コードで例外を握りつぶさず、確実に return "OK", 200 を返すようにする。
+
+エラーで処理不能な場合は Dead Letter Queue (DLQ) に送る設定をしておく。
+再pandas 警告修正
+
+# NG: Series.__getitem__（警告）
+array = [numAndUrl[0]]
+
+# OK: iloc を明示
+array = [numAndUrl.iloc[0]]
+
+
+→ 将来のエラー化を避ける + 警告ログ削減。
+
+Gunicorn で本番運用
+Dockerfile の CMD を以下に変更：
+
+CMD exec gunicorn --bind :8080 --workers 1 --threads 8 getDevAndPop:app
+
+
+→ Flask 開発サーバの警告解消 + メモリ管理改善。
+
+メモリ制御
+
+Cloud Run のメモリを一時的に 2GB に増加（課金は少し上がる）。
+
+そのうえで、Playwright のブラウザインスタンスを毎回新規に作るのではなく 処理後に明示的に browser.close() するよう修正。
+
+browser = p.chromium.launch()
+page = browser.new_page()
+page.goto(numAndUrl.iloc[1], wait_until="domcontentloaded")
+# ... 処理 ...
+browser.close()  # ← これを必ず実行
+
+
+Pub/Sub の Dead Letter Queue (DLQ) 設定
+
+メモリ落ちなどで 200 を返せない場合、無限リトライせずに 別トピック（例: my-dead-letter-topic）に転送する。
+
+そこで失敗メッセージを検証できるので「料金爆発」を防げる。」
+
+3. Docker イメージのビルド & Cloud Build で push
+gcloud builds submit --tag asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-docker-repo/my-service
+
+4. Cloud Run にデプロイ
+gcloud run deploy my-service --image asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-docker-repo/my-service:latest --region asia-northeast1
+ (--no-allow-unauthenticated)変更の必要あり（このままだと外部htmlリクエストを受けつけてしまう）
+
+(以下文章そのまま、shellで実行
+# プロジェクトIDを環境変数にセット
+PROJECT_ID=$(gcloud config get-value project)
+
+# Cloud Run サービスアカウントを変数にセット
+SERVICE_ACCOUNT=$(gcloud run services describe my-service \
+  --region=asia-northeast1 \
+  --format='value(spec.template.spec.serviceAccountName)')
+
+# Cloud Storage バケットへのアクセス権を付与
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=serviceAccount:$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+以上文章そのまま）
+
+＃A「必要な設定まとめ（<> を埋める箇所付き）
+① プロジェクト番号を取得
+PROJECT_ID=polar-fulcrum-358119
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+② Pub/Sub トピック作成
+gcloud pubsub topics create my-topic   # 例: my-topic
+
+③ Cloud Run に Pub/Sub サービスアカウントの呼び出し権限を付与
+gcloud run services add-iam-policy-binding <Cloud Run サービス名> \
+  --region=<デプロイしたリージョン> \
+  --member=serviceAccount:service-$PROJECT_NUMBER@gcp-sa-pubsub.iam.gserviceaccount.com \
+  --role=roles/run.invoker
+
+
+例：
+
+gcloud run services add-iam-policy-binding my-service \
+  --region=asia-northeast1 \
+  --member=serviceAccount:service-$PROJECT_NUMBER@gcp-sa-pubsub.iam.gserviceaccount.com \
+  --role=roles/run.invoker
+
+④ Pub/Sub サブスクリプション作成
+gcloud pubsub subscriptions create <任意のサブスクリプション名> \
+  --topic=<トピック名> \
+  --push-endpoint=https://<Cloud Run サービスURL>/ \
+  --push-auth-service-account=<PROJECT_ID>@appspot.gserviceaccount.com
+
+
+例：
+
+gcloud pubsub subscriptions create my-sub \
+  --topic=my-topic \
+  --push-endpoint=https://my-service-556105548619.asia-northeast1.run.app/ \
+  --push-auth-service-account=polar-fulcrum-358119@appspot.gserviceaccount.com
+
+⑤ Cloud Scheduler で定期実行を設定
+gcloud scheduler jobs create pubsub <任意のジョブ名> \
+  --schedule "*/30 * * * *" \
+  --topic=<トピック名> \
+  --message-body="trigger"
+
+
+例：
+
+gcloud scheduler jobs create pubsub my-job \
+  --schedule "*/30 * * * *" \
+  --topic=my-topic \
+  --message-body="trigger"
+
+
+✅ まとめると、あなたのケースでは <PROJECT_ID>@appspot.gserviceaccount.com を $SERVICE_ACCOUNT の代わりに書けばOKです。」＃A
+
+＃B「✅ ステップ 1: Scheduler のジョブ確認
+
+Scheduler ジョブが正しく登録されているか確認します。
+
+gcloud scheduler jobs list --location=asia-northeast1
+
+
+出力例：
+
+ID       LOCATION          SCHEDULE          TARGET_TYPE
+my-job   asia-northeast1   */30 * * * *      PUBSUB
+
+
+SCHEDULE が "*/30 * * * *" になっていればOKです。
+
+✅ ステップ 2: 手動でジョブを実行してみる
+
+待たずにすぐテストするにはジョブを手動実行できます。
+
+gcloud scheduler jobs run my-job --location=asia-northeast1
+
+
+これで即座に Pub/Sub トピックに "trigger" が送られます。
+
+✅ ステップ 3: Cloud Run 側のログを確認
+
+Cloud Run が実際に呼ばれたかはログで確認します。
+
+gcloud logs read --project=<PROJECT_ID> \
+  --region=asia-northeast1 \
+  --service=my-service \
+  --limit=20
+
+[
+gcloud logs read --project=polar-fulcrum-358119 \
+  --region=asia-northeast1 \
+  --service=my-service \
+  --limit=20
+]
+
+Pub/Sub から push されたリクエストがあればログに記録されます
+
+Python コード内に print() を入れていれば、その出力もログに残ります
+
+（もっと見やすくしたい場合は Cloud Console → Cloud Run → my-service → ログ を開いてGUIで確認するのがおすすめです）
+
+✅ 追加: Pub/Sub の配信確認
+
+もし Cloud Run のログに何も出てこなかったら、Pub/Sub 側のログも確認できます。
+
+gcloud pubsub subscriptions pull my-sub --limit=5 --auto-ack
+
+
+メッセージが残っていれば購読処理に問題がある可能性があります。
+
+📌 まとめると：
+
+gcloud scheduler jobs list でジョブ確認
+
+gcloud scheduler jobs run で手動テスト
+
+gcloud logs read で Cloud Run 側の反応を見る
+
+👉 ここまで確認すれば「確実に Scheduler → Pub/Sub → Cloud Run がつながっている」ことを検証できます。
+
+試してみますか？それとも、実際の Cloud Run のログの見方（GUIスクショ付き手順） を詳しく知りたいですか？」＃B
+
+
+ex.１回実行
+curl -X POST "https://my-service-556105548619.asia-northeast1.run.app" -H "Authorization: Bearer $(gcloud auth print-identity-token)" -H "Content-Type: application/json" -d '{"test": true}'
+
+1. 必須メモ
+項目	理由
+GCP プロジェクトID	gcloud コマンドや Scheduler 設定で必須
+Cloud Run サービス名	デプロイ先のサービスを指定するため
+Cloud Run URL	Scheduler の HTTP リクエスト先になる
+サービスアカウント名	Scheduler から呼び出す場合に必要 (roles/run.invoker を付与)
+2. 推奨メモ（必要に応じて）
+項目	理由
+Artifact Registry リポジトリ名 / イメージ名	後で新しいバージョンを push するとき参照
+最新のイメージタグや digest (sha256)	「最新イメージに固定したい」場合やロールバック時に必要
+Dockerfile / requirements.txt の場所	再ビルド時に参照
+CSV ファイルのバケット / ファイル名	process_csv が読み込むため

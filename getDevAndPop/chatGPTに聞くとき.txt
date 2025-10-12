@@ -1,0 +1,140 @@
+gcpによるpython定期実行
+インポートするファイル
+import os
+import time
+import re
+import pandas as pd
+from flask import Flask, request, jsonify
+from playwright.sync_api import sync_playwright
+scheduler,pub/sub/cloud run使用
+csv1.csvの先頭数行を参照してpyファイルを実行>csv2.csvに結果を追加>csv1の参照した部分を削除
+
+1️.Python スクリプト構成（Cloud Run 対応）
+
+Cloud Run では HTTP リクエストを受けて処理する Web サーバー が必要です。
+Flask を使って process_csv をラップします。
+
+必要なファイル・モジュール
+# main.py
+import os
+import time
+import re
+import pandas as pd
+from flask import Flask, request, jsonify
+from playwright.sync_api import sync_playwright
+
+app = Flask(__name__)
+
+# 元々の処理を関数として定義
+def process_csv():
+    # 例: csv1.csv の先頭数行を処理
+    df1 = pd.read_csv("csv1.csv")
+    n = 5  # 先頭5行処理
+    df_to_process = df1.head(n)
+    
+    # ここに Playwright や処理ロジックを書く
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        # ページ操作例
+        # page.goto("https://example.com")
+        browser.close()
+    
+    # 結果を csv2.csv に追加
+    if os.path.exists("csv2.csv"):
+        df_result = pd.read_csv("csv2.csv")
+        df_result = pd.concat([df_result, df_to_process])
+    else:
+        df_result = df_to_process
+    df_result.to_csv("csv2.csv", index=False)
+    
+    # 元 CSV の先頭 n 行を削除
+    df_remaining = df1.iloc[n:]
+    df_remaining.to_csv("csv1.csv", index=False)
+
+@app.route("/", methods=["POST"])
+def handle_request():
+    try:
+        process_csv()
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
+
+2️.Dockerfile（ローカルでビルド可能）
+# Playwright 公式イメージ（Python + Chromium 付き）
+FROM mcr.microsoft.com/playwright/python:latest
+
+WORKDIR /app
+
+# 依存関係インストール
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# アプリソースコピー
+COPY . .
+
+# Cloud Run ポート
+ENV PORT 8080
+EXPOSE 8080
+
+# Flask サーバー起動
+CMD ["python", "main.py"]
+
+
+requirements.txt は以下を含む例：
+
+Flask==2.3.2
+pandas==2.1.1
+playwright==1.42.0
+
+
+必要に応じて他のライブラリも追加。
+
+3️.デプロイ手順（ローカル PC で Docker 構築）
+
+Docker イメージのビルド
+
+docker build -t asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest .
+
+
+Artifact Registry に push
+
+docker push asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest
+
+
+Cloud Run にデプロイ
+
+gcloud run deploy my-func --image=asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest --region=asia-northeast1 --platform=managed --allow-unauthenticated
+
+4️⃣ 定期実行（Scheduler + Pub/Sub）
+
+Pub/Sub トピック作成
+
+gcloud pubsub topics create my-topic
+
+
+Cloud Scheduler で Pub/Sub に定期的にメッセージ送信
+
+gcloud scheduler jobs create pubsub my-job --schedule="*/5 * * * *" --topic=my-topic --message-body="run"
+
+
+Cloud Run サービスを Pub/Sub push サブスクリプションで登録
+
+gcloud pubsub subscriptions create my-subscription --topic=my-topic --push-endpoint=https://<CLOUD_RUN_URL>/ --push-auth-service-account=<SERVICE_ACCOUNT_EMAIL>
+
+
+これで CSV 処理を定期実行 できます。
+
+🔹 まとめポイント
+
+Python スクリプトは Flask で HTTP ラッパー化
+
+Dockerfile は Cloud Run 向けにポート 8080 指定
+
+Docker はローカル PC でビルドして Artifact Registry に push
+
+Pub/Sub + Cloud Scheduler で定期実行
