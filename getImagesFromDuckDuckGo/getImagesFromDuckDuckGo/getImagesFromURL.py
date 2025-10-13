@@ -1,63 +1,68 @@
-﻿import os
+import os
 import requests
 import pandas as pd
-from flask import Flask, request
 import time
 from pathlib import PurePosixPath
+import boto3
+from io import StringIO
 
-# このスクリプトファイルが存在するディレクトリの絶対パスを取得
-script_dir = os.path.dirname(os.path.abspath(__file__))
-# スクリプトと同じフォルダにあるファイル名を結合
-imageURLs_path = os.path.join(script_dir, 'imageURLs.csv')
-images_dir = os.path.join(script_dir, 'downloadedPics')
+def lambda_handler(event, context):
+    # S3の情報
+    bucket_name = "csvforddg"     # ←バケット名を入れる
+    imageURLs_key = "CSVforDDG/imageURLs.csv"
+    folder_path = "CSVforDDG/getIMG/"
 
-app = Flask(__name__)
-#BUCKET_NAME = "getimagesfromduckduckgo"
-
-@app.route("/", methods=["POST","GET"])
-def run_task():
-    #storage_client = storage.Client()
-    #tmp1 = tempfile.NamedTemporaryFile(delete=False)
-    #tmp2 = tempfile.NamedTemporaryFile(delete=False)
-    #storage_client.bucket(BUCKET_NAME).blob("keywordURLs.csv").download_to_filename(tmp1.name)
-    #storage_client.bucket(BUCKET_NAME).blob("imageURLs.csv").download_to_filename(tmp2.name)
-
-    dfr = pd.read_csv(imageURLs_path, header=None, encoding="utf-8-sig", encoding_errors='backslashreplace')
-    # 3列目が "pending" の最初の行の index を取得
-    pending_index = dfr.index[dfr[2] == "Pending"].min()
-    time.sleep(3)
-
-    if pd.notna(pending_index):  # pending が存在する場合
-        first_pending_URL = dfr.at[pending_index, 1]
-        print(first_pending_URL)
-    else:
-        print("No Pending found")
+    s3 = boto3.client("s3")
 
     try:
-        response = requests.get(first_pending_URL)
-        imgName = PurePosixPath(first_pending_URL).name
-        images_path = os.path.join(images_dir, imgName)
-        print(images_path)
-        time.sleep(3)
-        with open(images_path, 'wb') as f:
-            f.write(response.content)
+        # --- CSVファイルの読み込み ---
+        objURL = s3.get_object(Bucket=bucket_name, Key=imageURLs_key)
+        dfURL = pd.read_csv(objURL["Body"], header=None, encoding="utf-8-sig", encoding_errors='backslashreplace')
 
-        # 取得済み行を "completed" に更新
-        dfr.at[pending_index, 2] = "Completed"
-        dfr.to_csv(imageURLs_path, index=False, header=False)
-    except Exception:
-        print("failed")
+        # 3列目が "pending" の最初の行の index を取得
+        pending_index = dfURL.index[dfURL[2] == "Pending"].min()
+        print(str(pending_index) + "  /  " + str(dfURL.shape[0]))
 
-    #storage_client.bucket(BUCKET_NAME).blob("SetCSV.csv").upload_from_filename(tmp1.name)
-    #storage_client.bucket(BUCKET_NAME).blob("GetCSV.csv").upload_from_filename(tmp2.name)
+        if pd.isna(pending_index):  # Pendingが存在しない場合
+            print("No Pending found")
+            return {"status": "done", "message": "No Pending found"}
 
-    return "Task Completed", 200
-if __name__ == "__main__":
-    print("getImagesFromURL")
+        first_pending_URL = dfURL.at[pending_index, 1]
+        print("Target URL:", first_pending_URL)
 
-    # 関数を直接呼んでテスト
-    run_task()
+        try:
+            # --- 画像取得 ---
+            response = requests.get(first_pending_URL, timeout=10)
+            response.raise_for_status()  # ステータスコード4xx/5xxで例外発生
 
-    # サーバーも起動するならそのまま
-    #port = int(os.environ.get("PORT", 8080))
-    #app.run(host="0.0.0.0", port=port)
+            # --- S3に画像を保存 ---
+            imgName = PurePosixPath(first_pending_URL).name
+            s3_key = os.path.join(folder_path, imgName)
+
+            s3.put_object(
+                Bucket=bucket_name,
+                Key=s3_key,
+                Body=response.content,
+                ContentType=response.headers.get('Content-Type', 'application/octet-stream')
+            )
+
+            print(f"Uploaded to S3: s3://{bucket_name}/{s3_key}")
+
+            # 状態を "Completed" に変更
+            dfURL.at[pending_index, 2] = "Completed"
+
+        except Exception as e:  # ダウンロードに失敗した場合
+            print("Image download failed:", e)
+            # 状態を "ERROR" に変更
+            dfURL.at[pending_index, 2] = "ERROR"
+    
+        # --- df1を書き戻し ---
+        bufferURL = StringIO()
+        dfURL.to_csv(bufferURL, index=False, header=False)
+        s3.put_object(Bucket=bucket_name, Key=imageURLs_key, Body=bufferURL.getvalue())
+    except Exception as e:
+        print("Error:", e)
+        return {"status": "error", "message": str(e)}
+    
+    print("getIMG実行完了")
+    return {"status": "done"}
