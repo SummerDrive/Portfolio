@@ -1,9 +1,9 @@
 Artifact Registry の古いイメージ削除: 
-gcloud artifacts docker images list asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-docker-repo/my-service で一覧確認
+gcloud artifacts docker images list asia-northeast1-docker.pkg.dev/polar-xxxxxx/my-docker-repo/my-service で一覧確認
  # 全タグ付きイメージを一括で削除
-gcloud artifacts docker images delete asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-docker-repo/my-service --delete-tags --quiet
+gcloud artifacts docker images delete asia-northeast1-docker.pkg.dev/polar-xxxxxx/my-docker-repo/my-service --delete-tags --quiet
 (Cloud Build 履歴削除: gcloud builds list で一覧確認
  → gcloud builds delete BUILD_ID
  → 全削除するなら gcloud builds list --format="value(ID)" | xargs -n1 gcloud builds delete --quiet)不要
-Cloud Build GCS バケット削除（任意）: gsutil rm -r gs://polar-fulcrum-358119_cloudbuild
+Cloud Build GCS バケット削除（任意）: gsutil rm -r gs://polar-xxxxxx-_cloudbuild
 注意: 最新の Cloud Run が参照しているイメージだけ残し、それ以外は消してOK。
