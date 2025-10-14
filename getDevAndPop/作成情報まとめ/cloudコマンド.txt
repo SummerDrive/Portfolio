@@ -40,7 +40,7 @@ Docker イメージから直接デプロイする場合は、Cloud Run を使用
 
 1. Cloud Run サービスのデプロイ
 gcloud run deploy my-func ^
-  --image=asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest ^
+  --image=asia-northeast1-docker.pkg.dev/polar-xxxxxx/my-repo/my-func:latest ^
   --region=asia-northeast1 ^
   --platform=managed ^
   --allow-unauthenticated
@@ -66,7 +66,7 @@ gcloud pubsub topics create my-topic
 Cloud Run サービスへの Pub/Sub サブスクリプションの作成:
 
 gcloud run services add-iam-policy-binding my-func ^
-  --member=serviceAccount:$(gcloud projects describe polar-fulcrum-358119 --format='value(projectNumber)')-compute@developer.gserviceaccount.com ^
+  --member=serviceAccount:$(gcloud projects describe polar-xxxxxx --format='value(projectNumber)')-compute@developer.gserviceaccount.com ^
   --role=roles/pubsub.subscriber ^
   --region=asia-northeast1
 
@@ -76,7 +76,7 @@ Pub/Sub トピックと Cloud Run サービスの関連付け:
 gcloud pubsub subscriptions create my-subscription ^
   --topic=my-topic ^
   --push-endpoint=https://my-func-<random-id>.a.run.app ^
-  --push-auth-service-account=projects/polar-fulcrum-358119/serviceAccounts/my-func@polar-fulcrum-358119.iam.gserviceaccount.com
+  --push-auth-service-account=projects/polar-xxxxxx/serviceAccounts/my-func@polar-xxxxxx.iam.gserviceaccount.com
 
 
 ※ <random-id> は Cloud Run サービスの URL に含まれるランダムな識別子です。デプロイ後に確認できます。」
