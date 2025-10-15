@@ -98,17 +98,17 @@ playwright==1.42.0
 
 Docker イメージのビルド
 
-docker build -t asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest .
+docker build -t asia-northeast1-docker.pkg.dev/polar-xxxxxx/あmy-repo/my-func:latest .
 
 
 Artifact Registry に push
 
-docker push asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest
+docker push asia-northeast1-docker.pkg.dev/polar-xxxxxx/my-repo/my-func:latest
 
 
 Cloud Run にデプロイ
 
-gcloud run deploy my-func --image=asia-northeast1-docker.pkg.dev/polar-fulcrum-358119/my-repo/my-func:latest --region=asia-northeast1 --platform=managed --allow-unauthenticated
+gcloud run deploy my-func --image=asia-northeast1-docker.pkg.dev/polar-xxxxxx/my-repo/my-func:latest --region=asia-northeast1 --platform=managed --allow-unauthenticated
 
 4️⃣ 定期実行（Scheduler + Pub/Sub）
 
