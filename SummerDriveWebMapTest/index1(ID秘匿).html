@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html>
 <html lang="ja">
-<meta charset="UTF-8">
   <head>
+    <meta charset="UTF-8">
     <title>SummerDriveWebMapTest</title>
-    <style>
-      #map {
-        height: 500px;
-        width: 100%;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css">
     <script>
       function initMap() {
         const tokyo = { lat: 35.6804, lng: 139.7690 };
@@ -23,7 +18,13 @@
   <body>
     <h1>SummerDriveWebMapTest</h1>
     <p>AWS EC2,S3,vim使用訓練用</p>
+    <!-- <div class="map-container">
+      <div id="map1"></div>
+      <div id="map2"></div>
+    </div> -->
     <div id="map"></div>
+    <!-- index2.html��檎�欠Щ -->
+    <button onclick="location.href='./index2.html'">GO</button>
 
     <script
       src="https://maps.googleapis.com/maps/api/js?key=API_KEY&callback=initMap"

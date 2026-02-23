@@ -1,0 +1,42 @@
+  /* .map-container {
+    display: flex;
+    gap: 10px; �Ͽޤδ֤�;��
+  } */
+
+  #map {
+    width: 1500px;
+    height: 700px;
+  } 
+
+  .row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .span1 {
+    display: inline-block;
+    width: 115px;
+    height: 50px;
+    text-align: center;
+    vertical-align: middle; /*縦方向の揃え */
+  }
+
+  .span2 {
+    display: inline-block;
+    width: 100px;
+    height: 50px;
+    text-align: center;
+    vertical-align: middle; /*縦方向の揃え */
+  }
+
+  button {
+    padding: 4px 10px;
+  }
+
+  button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+  }
