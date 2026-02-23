@@ -6,9 +6,9 @@ EC2インスタンス上にWebページを公開
 
 index1 - Map表示 GoogleMapAPI
 
-index2 - S3内のCSVから各レース情報を取得して表示<br>
-> 各レースの反映ボタンで API gateway > lambda(Node.js) > playwright > 某webサイトから配当情報を取得<br>
-> ページに反映
+index2 - S3内のCSVから各レース情報を取得して表示 > <br>
+各レースの反映ボタンで API gateway > lambda(Node.js) > playwright > 某webサイトから配当情報を取得 > <br>
+ページに反映
 
 [https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html](https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html)
 
@@ -22,6 +22,6 @@ index2 - S3内のCSVから各レース情報を取得して表示<br>
 2/23 某webサイトからの配当情報取得ページ増設
 
 ### 今後の実装
-マップ内に書き込み機能
+マップ内に書き込み機能<br>
 取得した配当情報をS3内CSVに蓄積
 
