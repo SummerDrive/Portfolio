@@ -6,9 +6,9 @@ EC2インスタンス上にWebページを公開
 
 index1 - Map表示 GoogleMapAPI
 
-index2 - S3内のCSVから各レース情報を取得して表示 > <br>
+index2 - S3内のRaceID.CSVから各レース情報を取得して表示 > <br>
 各レースの反映ボタンで API gateway > lambda(Node.js) > playwright > 某webサイトから配当情報を取得 > <br>
-ページに反映
+RaceResult.CSVに記録 + ページに反映
 
 [https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html](https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html)
 
