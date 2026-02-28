@@ -18,7 +18,7 @@
   .span1 {
     display: inline-block;
     width: 115px;
-    height: 50px;
+    height: 30px;
     text-align: center;
     vertical-align: middle; /*縦方向の揃え */
   }
@@ -26,12 +26,25 @@
   .span2 {
     display: inline-block;
     width: 100px;
-    height: 50px;
+    height: 30px;
+    text-align: center;
+    vertical-align: middle; /*縦方向の揃え */
+  }
+
+  .span3 {
+    display: inline-block;
+    width: 150px;
+    height: 30px;
     text-align: center;
     vertical-align: middle; /*縦方向の揃え */
   }
 
   button {
+    display: inline-block;
+    width: 100px;
+    height: 25px;
+    text-align: center;
+    vertical-align: middle; /*縦方向の揃え */
     padding: 4px 10px;
   }
 
