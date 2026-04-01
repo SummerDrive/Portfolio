@@ -10,7 +10,7 @@ index2 - S3内のRaceID.CSVから各レース情報を取得して表示 > <br>
 各レースの反映ボタンで API gateway > lambda(Node.js) > playwright > 某webサイトから配当情報を取得 > <br>
 RaceResult.CSVに記録 + ページに反映
 
-index3 - スライドショー(Splide使用)
+index3 - スライドショー(Splide,filepond使用)
 
 [https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html](https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html)
 
@@ -27,11 +27,13 @@ index3 - スライドショー(Splide使用)
 
 2/28 取得した配当情報をS3内CSVに蓄積
 
-3/14 スライドショー追加
+3/14 スライドショー追加(Splide使用)
+
+3/21 ローカルからの画像アップロード機能追加(filepond使用)
 
 ### 今後の実装
 index1 > マップ内に書き込み機能
 
-index3 > ローカルからの画像アップロード機能
+index3 > コラージュ機能
 
 (広告バナー設置 保留)
