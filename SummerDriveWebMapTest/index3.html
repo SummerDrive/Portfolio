@@ -6,18 +6,22 @@
     <title>SlideShowTest</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
   </head>
 
-<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+  <!-- プラグインを追加 -->
+  <script src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js"></script>
+  <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
 
   <body>
-    <h1>SummerDriveWebMapTest</h1>
+    <h1>SlideShowTest</h1>
     <p>AWS EC2,S3,vim使用訓練用</p>
 
     <section class="splide" aria-label="Splideの基本的なHTML">
       <div class="splide__track">
-        <div class="splide__list">
-          <div class="splide__slide">
+        <ul class="splide__list">
+          <!--<div class="splide__slide">
             <img class="IMGbackground" src='picture/resort seashore31_0.jpg'>
           </div>
           <div class="splide__slide">
@@ -25,8 +29,8 @@
           </div>
           <div class="splide__slide">
             <img class="IMGbackground" src='picture/resort seashore41_0.jpg'>
-          </div>
-        </div>
+          </div> -->
+        </ul>
       </div>
     </section>
 
@@ -41,6 +45,11 @@
     <button onclick="location.href='./index1.html'">Map</button>
     <button onclick="location.href='./index2.html'">Race</button>
 
+    <form action="">
+      <input type="file" />
+      <button type="submit">submit</button>
+    </form>
+    
     <script src="./script_slideshow.js"></script>
   </body>
 </html>
