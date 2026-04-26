@@ -12,6 +12,8 @@ RaceResult.CSVに記録 + ページに反映
 
 index3 - スライドショー(Splide,filepond使用)
 
+index5 - index2をWin5用に改造
+
 [https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html](https://summerdrivewebmaptest.s3.ap-northeast-1.amazonaws.com/index1.html)
 
 ※リンクはCtrl+クリック（MacはCmd+クリック）で別タブで開けます。
@@ -32,6 +34,8 @@ index3 - スライドショー(Splide,filepond使用)
 3/21 ローカルからの画像アップロード機能追加(filepond使用)>index3
 
 4/5 注目レース10分前アラーム追加>index2
+
+4/26 index2をWin5用に改造開始>index5
 
 ### 今後の実装
 index1 > マップ内に書き込み機能
