@@ -1,0 +1,100 @@
+WSLを起動 (デフォルト): wsl
+ホームディレクトリで起動: wsl ~
+特定のディストリビューションを起動: wsl -d <ディストリビューション名>
+例: wsl -d Ubuntu-22.04
+インストールされているディストリビューションを確認: wsl -l -v
+WSLの完全シャットダウン (再起動用): wsl --shutdown
+最新のWSLをインストール/更新: wsl --install 
+wsl --terminate Debian
+
+
+compgen -c | sort | less 今の環境で「実行できるコマンド」をまとめて出します>見やすく一覧表示
+
+■ 1. 自分の接続状態の確認
+
+これは完全に安全で基本中の基本です。
+
+IPアドレス確認
+ip addr
+デフォルトゲートウェイ（ルーター）確認
+ip route
+DNS確認
+cat /etc/resolv.conf
+
+👉 わかること
+
+自分のIP
+ルーターのIP（Wi-Fi機器）
+DNSサーバ
+■ 2. Wi-Fiの詳細情報（接続中）
+iw dev wlan0 link
+
+👉 わかること
+
+接続しているSSID
+電波強度
+通信速度traceroute
+
+※ wlan0 は環境によって wlp2s0 などに変わります
+
+■ 3. 利用可能なWi-Fi一覧（受動的取得）
+nmcli dev wifi list
+
+または
+
+iw dev wlan0 scan
+
+👉 わかること
+
+周囲のSSID
+チャンネル
+暗号化方式（WPA2など）
+
+※ 受動的スキャンは通常OKですが、店舗ポリシーによっては控えた方が無難
+
+■ 4. 疎通確認（外部との通信チェック）
+ping google.com
+traceroute google.com
+
+👉 わかること
+
+インターネットに出られるか
+経路
+■ 5. 名前解決の確認
+nslookup google.com
+
+または
+
+dig google.com
+■ 6. ARPテーブル（自分が通信した範囲のみ）
+arp -a
+
+👉 わかること
+
+自分が通信した機器のIPとMAC
+
+※ これも「勝手に探索する用途」で使うのはNG寄り
+
+■ 一番安全な停止方法（推奨）
+① Linux側で作業終了
+
+まずWSL（Debian）内で：
+
+exit
+
+👉 シェルを正常終了（未保存作業があればここで対処）
+
+② Windows側でWSLを停止
+wsl --shutdown
+
+👉 すべてのWSLインスタンスを安全に停止
+
+■ 特定ディストロだけ止める
+wsl --terminate Debian
+
+👉 表示されている Debian のみ停止
+
+■ 状態確認
+wsl -l -v
+
+👉 Stopped になっていればOK

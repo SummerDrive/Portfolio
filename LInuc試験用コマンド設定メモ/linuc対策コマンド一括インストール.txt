@@ -1,0 +1,91 @@
+LinuC（Linux技術者認定試験）の学習のために、ご自身のDebian環境を「試験対策仕様」に整えるのは非常に賢明な判断ですね。実機での操作経験は、問題集を解く何倍もの力になります。
+
+Debian 13 (trixie) は最新のパッケージが含まれているため、試験範囲のコマンドを網羅するのに適しています。以下の手順で環境を構築してみてください。
+
+---
+
+## 1. 必須コマンドパッケージのインストール
+
+LinuCレベル1（101, 102）で頻出するコマンドの中には、標準インストールでは入っていないものがあります。まずはこれらを一括で導入しましょう。
+
+```bash
+sudo apt update
+sudo apt install -y quota quotatool \
+    iproute2 net-tools dnsutils iputils-ping \
+    procps psmisc \
+    vim bash-completion \
+    lsof sysstat tree \
+    parted fdisk eject \
+    man-db manpages-ja
+
+```
+
+* **quota:** ディスククォータ管理の学習に必須です。
+* **net-tools / iproute2:** `ifconfig`（古い）と `ip`（新しい）の両方を比較学習できます。
+* **manpages-ja:** コマンドの使い方が日本語で確認できるようになります。
+
+---
+
+## 2. LinuC特有の「管理系ツール」の準備
+
+試験には、Debian系特有のツールと、RedHat系（CentOS/Rocky Linux等）で使われるツールの両方が出題されます。
+
+* **パッケージ管理:**
+Debianなので `apt`, `dpkg` はそのまま練習できます。可能であれば、試験範囲に含まれる `alien`（パッケージ形式変換ツール）も入れておくと役立ちます。
+```bash
+sudo apt install alien
+
+```
+
+
+* **ブートローダ (GRUB2):**
+`/etc/default/grub` や `/boot/grub/grub.cfg` の構造を確認してください。
+
+---
+
+## 3. 仮想環境（Docker / KVM）の活用
+
+自分のメインPCの設定を壊すのが不安な場合や、試験範囲にある「システム終了コマンド」などを安全に試すには仮想化が一番です。
+
+* **Docker:** 特定のコマンド（プロセス管理や権限確認）を試すのに最適。
+* **KVM/QEMU:** カーネルのビルドや仮想ドライブの追加など、深い階層の学習に。
+
+---
+
+## 4. 学習効率を上げる設定（bash-completion）
+
+試験ではコマンドのオプションまで正確に覚える必要があります。`bash-completion` を有効にすると、[Tab]キーでオプションが補完されるようになり、どのような選択肢があるのかを自然に覚えられます。
+
+`/etc/bash.bashrc` もしくは `~/.bashrc` で以下の記述が有効（コメントアウトされていない）か確認してください。
+
+```bash
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+```
+
+---
+
+## 5. 実践的な練習のヒント
+
+単にコマンドを叩くだけでなく、以下のファイルを「眺める」習慣をつけてください。これらはLinuCの最重要ポイントです。
+
+| カテゴリ | 確認すべきファイル・ディレクトリ |
+| --- | --- |
+| **ハードウェア** | `/proc`, `/sys`, `/dev` |
+| **起動プロセス** | `/etc/systemd/system`, `/lib/systemd/system` |
+| **ライブラリ** | `/etc/ld.so.conf`, `/etc/ld.so.conf.d/` |
+| **ユーザー管理** | `/etc/passwd`, `/etc/shadow`, `/etc/group` |
+
+### アドバイス
+
+Debian 13は `systemd` が標準ですので、LinuCで頻出する `SysVinit`（古い起動方式）との違いを意識しながら学習すると、より深い理解につながります。頑張ってください！
+
+```
+
+```
