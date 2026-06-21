@@ -6,3 +6,6 @@
   ,GCP(Cloud Run, Big Query, Map Javascript API)<br>
   , Node.js, Docker, Googleスプレッドシート, Excel(マクロ)<br>
   , PowerAutomate, Unity, Blender
+
+## 検定
+  Linuc level1 101試験合格(102試験を7月中に受験予定)
